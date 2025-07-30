@@ -1,0 +1,115 @@
+<html>
+  <head>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter";
+      }
+
+      html {
+        height: fit-content;
+        min-height: fit-content;
+        min-width: 320px;
+        max-width: 320px;
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgb(84, 84, 84);
+
+        animation: fadeIn 0.4s ease-out;
+
+
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      body {
+        padding: 12px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        min-height: fit-content;
+        height: fit-content;
+
+        background: rgb(35, 25, 29);
+        /* box-shadow: 0 0 15px rgba(0, 0, 0, 0); */
+        color: white;
+
+        /* Ensure content clips to rounded corners */
+        overflow: hidden;
+      }
+
+      header {
+        max-width: 240px;
+      }
+
+      h1,
+      h2 {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      p {
+        --font-size: 12px;
+        --line-height: 1.4;
+        --lines: 4;
+
+        font-size: var(--font-size);
+        font-weight: 300;
+        line-height: var(--line-height);
+        max-width: 100%;
+
+        display: -webkit-box;
+        -webkit-line-clamp: var(--lines);
+        line-clamp: var(--lines);
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="margin-right: 12px">
+      <img
+        src="data:image/png;base64,{img}"
+        alt="{app_name}"
+        style="width: 42px; height: 42px; border-radius: 8px"
+      />
+    </div>
+    <header></header>
+    <script>
+      const TITLE = "{title}";
+      const SUBTITLE = "{subtitle}";
+      const BODY = "{body}";
+
+      const headerElement = document.querySelector("header");
+
+      let headerContent = "";
+
+      if (TITLE !== "") {
+        headerContent += `<h1>${TITLE}</h1>`;
+      }
+
+      if (SUBTITLE !== "") {
+        headerContent += `<h2>${SUBTITLE}</h2>`;
+      }
+
+      if (BODY !== "") {
+        headerContent += `<p>${BODY}</p>`;
+      }
+
+      headerElement.innerHTML = headerContent;
+    </script>
+  </body>
+</html>
