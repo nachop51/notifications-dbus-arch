@@ -20,7 +20,7 @@ class NotificationParser:
         actions: list[str],
         hints: dict[str, str],
         replaceable: bool = False,
-        expire_timeout: int = 5000,
+        expire_timeout: int = 7000,
     ):
         self.id = id
         self.app_name = app_name
@@ -76,7 +76,6 @@ class NotificationParser:
 
     def parse_image(self):
         """Parse the image data from the hints."""
-        print(self.hints.keys())
         if key := self.has_image_data():
             wrapped_data = self.hints.get(key)
             image = self.unwrap_variant(wrapped_data)

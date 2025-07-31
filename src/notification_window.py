@@ -24,24 +24,27 @@ from gi.repository import (  # noqa: E402
 
 def create_notification_window(
     notification: NotificationParser,
+    action_callback=None,
 ) -> Gtk.Window:
     """
     Create a GTK notification window with layer shell support for workspace persistence.
 
     Args:
         notification: NotificationParser containing notification data
+        action_callback: Callback function for handling actions
 
     Returns:
         Gtk.Window: Configured notification window
     """
     window = Gtk.Window()
     window.notification = notification
+    window.action_callback = action_callback
 
     GtkLayerShell.init_for_window(window)
 
     _set_window_conf(window)
 
-    webview = _create_webview(notification)
+    webview = _create_webview(notification, window)
 
     window.add(webview)
 
@@ -111,7 +114,9 @@ def _set_window_conf(window: Gtk.Window) -> None:
         window.set_visual(visual)
 
 
-def _create_webview(notification: NotificationParser) -> WebKit2.WebView:
+def _create_webview(
+    notification: NotificationParser, window: Gtk.Window
+) -> WebKit2.WebView:
     """Create and configure the WebKit webview."""
     webview = WebKit2.WebView()
     webview.set_name("notification-webview")
@@ -134,22 +139,84 @@ def _create_webview(notification: NotificationParser) -> WebKit2.WebView:
     except Exception:
         pass
 
-    # Load notification content
+    # Prepare actions data for JavaScript with proper escaping
+    actions_data = _prepare_actions_data(notification.actions)
+    actions_json = json.dumps(actions_data) if actions_data else "[]"
+
+    # Helper function to escape strings for HTML/JS
+    def escape_for_html(text):
+        if not text:
+            return ""
+        return (
+            text.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+        )
+
+    # Load notification content with proper escaping
     html = (
         open("templates/notification.html", "r", encoding="utf-8")
         .read()
-        .replace("{title}", notification.title)
-        .replace("{body}", notification.body)
-        .replace("{subtitle}", notification.subtitle or "")
-        .replace("{img}", notification.img)
+        .replace("{title}", escape_for_html(notification.title))
+        .replace("{body}", escape_for_html(notification.body))
+        .replace("{subtitle}", escape_for_html(notification.subtitle or ""))
+        .replace("{img}", notification.img or "")
+        .replace("{app_name}", escape_for_html(notification.app_name or ""))
+        .replace("{actions}", actions_json)
+        .replace("{notification_id}", str(notification.id))
     )
     webview.load_html(html, "file:///")
 
+    # Set up JavaScript message handling for actions
+    user_content_manager = webview.get_user_content_manager()
+    user_content_manager.connect(
+        "script-message-received::action",
+        lambda _, message: _handle_action_message(window, message),
+    )
+    user_content_manager.register_script_message_handler("action")
+
     # Show inspector for debugging (comment out for production)
-    # inspector = webview.get_inspector()
-    # inspector.show()
+    inspector = webview.get_inspector()
+    inspector.show()
 
     return webview
+
+
+def _prepare_actions_data(actions):
+    """Convert actions array to structured data for JavaScript."""
+    if not actions:
+        return []
+
+    action_buttons = []
+    # Actions come in pairs: action_key, action_label
+    for i in range(0, len(actions), 2):
+        if i + 1 < len(actions):
+            action_key = actions[i]
+            action_label = actions[i + 1]
+            action_buttons.append({"key": action_key, "label": action_label})
+
+    return action_buttons
+
+
+def _handle_action_message(window: Gtk.Window, message):
+    """Handle action messages from JavaScript."""
+    try:
+        # Get the message body (action key)
+        js_value = message.get_js_value()
+        action_key = (
+            js_value.to_string()
+            if hasattr(js_value, "to_string")
+            else str(js_value)
+        )
+
+        # Call the action callback if available
+        if window.action_callback and hasattr(window, "notification"):
+            window.action_callback(window.notification.id, action_key)
+
+    except Exception as e:
+        print(f"Error handling action message: {e}")
 
 
 def _on_content_loaded(
