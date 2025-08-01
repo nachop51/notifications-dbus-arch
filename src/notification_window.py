@@ -178,8 +178,8 @@ def _create_webview(
     user_content_manager.register_script_message_handler("action")
 
     # Show inspector for debugging (comment out for production)
-    inspector = webview.get_inspector()
-    inspector.show()
+    # inspector = webview.get_inspector()
+    # inspector.show()
 
     return webview
 
